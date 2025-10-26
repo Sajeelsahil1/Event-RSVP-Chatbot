@@ -26,7 +26,7 @@ Requires Firebase Email/Password Auth
 
 ✨ Key Features
 
-Public Chatbot (index.html)
+Public Chatbot (chatbot.html)
 
 Conversational RSVP: Guests can quickly respond to an event invitation via an engaging chat interface.
 
