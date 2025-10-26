@@ -99,7 +99,7 @@ service cloud.firestore {
 
 Clone this repository:
 
-git clone [https://github.com/YOUR-USERNAME/event-rsvp-chatbot.git](https://github.com/YOUR-USERNAME/event-rsvp-chatbot.git)
+git clone [https://github.com/YOUR-USERNAME/event-rsvp-chatbot.git](https://github.com/Sajeelsahil1/Event-RSVP-Chatbot.git)
 cd event-rsvp-chatbot
 
 
