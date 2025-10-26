@@ -1,0 +1,780 @@
+<!DOCTYPE html>
+<html lang="en" class="h-100">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🎟️ Event RSVP Chatbot</title>
+    
+    <!-- Load Bootstrap CSS -->
+    <!-- FIXED: Corrected 'xintegrity' to 'integrity' -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" xintegrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
+
+    <!-- NEW: Add Inter font for a professional look -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+
+    <style>
+        /* Custom styles for layout and chat bubbles */
+        html, body {
+            height: 100%;
+            /* UPDATED: Dark mode theme */
+            background-color: #121212;
+            color: #e0e0e0;
+            /* UPDATED: Professional Font */
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+
+        html {
+            scroll-behavior: smooth;
+        }
+
+        /* Center the chatbot on the page */
+        body {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 1rem;
+        }
+
+        /* New wrapper for the centered chatbot */
+        .chatbot-ui-wrapper {
+            width: 100%;
+            max-width: 550px; /* A bit wider */
+            height: 90vh; /* Taller */
+            min-height: 600px;
+            /* UPDATED: Dark mode card */
+            background-color: #1E1E1E;
+            border-radius: 1rem; /* Softer radius */
+            display: flex;
+            flex-direction: column; /* Changed to column */
+            overflow: hidden; 
+            position: relative; /* For history button */
+            /* NEW: Soft shadow to make it "float" */
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+        }
+
+        /* Make chat panel fill the wrapper */
+        .chat-panel {
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+        }
+
+        /* REMOVED: .chat-header */
+
+        /* NEW: History button */
+        .history-btn {
+            position: absolute;
+            top: 1rem;
+            right: 1rem;
+            z-index: 10;
+            background: #3A3A3A;
+            border: none;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #e0e0e0;
+            transition: background-color 0.2s ease;
+        }
+        .history-btn:hover {
+            background: #4a4a4a;
+        }
+         .history-btn svg {
+            width: 20px;
+            height: 20px;
+        }
+
+        #chat-window {
+            flex-grow: 1;
+            padding: 1.5rem;
+            padding-top: 4.5rem; /* Space for history button */
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+            background-color: #1E1E1E; /* Dark background */
+        }
+
+        #input-area {
+            flex-shrink: 0; /* Prevent input from shrinking */
+            /* UPDATED: High-contrast light theme input area */
+            padding: 1rem;
+            border-top: 1px solid #3A3A3A;
+            background-color: #ffffff; /* White background */
+        }
+
+
+        /* Responsive stacking for mobile */
+        @media (max-width: 768px) {
+            body {
+                align-items: flex-start;
+                padding: 0;
+                background-color: #1E1E1E; /* Match chat window */
+            }
+            .chatbot-ui-wrapper {
+                height: 100vh;
+                width: 100%;
+                max-width: 100%;
+                min-height: 100%;
+                border-radius: 0;
+                border: 0;
+                box-shadow: none;
+            }
+        }
+
+        /* NEW: Animation for smooth bubble appearance */
+        @keyframes slideUpFadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* --- Modern Chat Bubble Styling --- */
+        .chat-bubble-user,
+        .chat-bubble-bot {
+            padding: 0.75rem 1.25rem;
+            border-radius: 1.25rem;
+            max-width: 80%;
+            word-wrap: break-word;
+            box-shadow: none; /* Removed shadow */
+            /* NEW: Apply smooth animation */
+            animation: slideUpFadeIn 0.4s ease-out forwards;
+        }
+
+        .chat-bubble-user {
+            /* UPDATED: Purple bubble */
+            background: #7B16FF;
+            color: white;
+            align-self: flex-end;
+            border-bottom-right-radius: 0.25rem; /* "Tail" */
+        }
+        .chat-bubble-bot {
+            /* UPDATED: Dark grey bubble */
+            background-color: #3A3A3A;
+            color: #e0e0e0;
+            align-self: flex-start;
+            border-bottom-left-radius: 0.25rem; /* "Tail" */
+        }
+
+        /* Quick Reply Button Style */
+        .quick-reply-btn {
+            /* UPDATED: Dark mode quick reply */
+            background-color: transparent;
+            border: 1px solid #7B16FF;
+            color: #7B16FF;
+            border-radius: 50px;
+            padding: 0.25rem 0.75rem;
+            font-size: 0.875rem;
+            transition: all 0.2s ease;
+        }
+        .quick-reply-btn:hover {
+            background-color: #f0f3ff;
+            color: #7B16FF;
+            border-color: #7B16FF;
+        }
+
+        /* Form controls */
+         .form-control, .btn {
+            border-radius: 0.5rem !important; 
+        }
+
+        /* UPDATED: Light input field for high contrast */
+        #user-input {
+            background-color: #f1f5f9; /* slate-100 */
+            color: #121212;
+            border: 1px solid #f1f5f9;
+        }
+        #user-input::placeholder {
+            color: #6c757d;
+        }
+        .form-control:focus {
+            box-shadow: 0 0 0 0.25rem rgba(123, 22, 255, 0.3);
+            border-color: #7B16FF;
+            background-color: #ffffff;
+        }
+
+        /* UPDATED: Dark send button */
+        #send-button {
+            background-color: #7B16FF;
+            border: none;
+        }
+        #send-button:hover {
+            background-color: #6a14dd;
+        }
+
+        /* Typing indicator */
+        .typing-indicator span {
+            height: 8px;
+            width: 8px;
+            background-color: #888; /* Lighter grey */
+            border-radius: 50%;
+            display: inline-block;
+            animation: bounce 1.4s infinite both;
+        }
+        .typing-indicator span:nth-child(1) { animation-delay: -0.32s; }
+        .typing-indicator span:nth-child(2) { animation-delay: -0.16s; }
+        
+        @keyframes bounce {
+            0%, 80%, 100% { transform: scale(0); }
+            40% { transform: scale(1.0); }
+        }
+
+        /* NEW: Animation for history items */
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: scale(0.95);
+            }
+            to {
+                opacity: 1;
+                transform: scale(1);
+            }
+        }
+
+        /* NEW: History List Styles */
+        .history-item {
+            background: #3A3A3A;
+            padding: 1rem;
+            border-radius: 0.5rem;
+            /* NEW: Apply smooth animation */
+            animation: fadeIn 0.3s ease-out forwards;
+        }
+        .history-item-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 0.5rem;
+        }
+        .history-item-header h5 {
+            margin-bottom: 0;
+            color: #fff;
+        }
+        .history-item .badge {
+            font-size: 0.8rem;
+        }
+        .history-item p {
+            margin-bottom: 0.25rem;
+            font-size: 0.9rem;
+            color: #ccc;
+        }
+        .history-item .delete-rsvp-btn {
+            font-size: 0.8rem;
+            padding: 0.25rem 0.5rem;
+        }
+    </style>
+</head>
+<body class="h-100">
+
+    <div class="chatbot-ui-wrapper">
+        <!-- Chatbot Interface -->
+        <div class="chat-panel">
+
+            <!-- NEW: History Button -->
+            <button class="history-btn" type="button" data-bs-toggle="offcanvas" data-bs-target="#historyOffcanvas" aria-controls="historyOffcanvas" title="View my RSVPs">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 16 16">
+                    <path d="M.5 1a.5.5 0 0 0-.5.5v13a.5.5 0 0 0 .5.5h15a.5.5 0 0 0 .5-.5v-13a.5.5 0 0 0-.5-.5H.5zM1 2h14v12H1V2z"/>
+                    <path d="M8 11a3 3 0 1 0 0-6 3 3 0 0 0 0 6z"/>
+                    <path d_old="M8 4.5a.5.5 0 0 1 .5.5v3a.5.5 0 0 1-.5.5H6a.5.5 0 0 1 0-1h1.5V5a.5.5 0 0 1 .5-.5z"/>
+                    <path d="M8.5 5.5a.5.5 0 0 0-1 0v2.5H6a.5.5 0 0 0 0 1h2a.5.5 0 0 0 .5-.5V5.5z"/>
+                </svg>
+            </button>
+            
+            <!-- REMOVED: Chat Header -->
+
+            <!-- Chat Messages -->
+            <div id="chat-window">
+                <!-- Messages appear here -->
+            </div>
+
+            <!-- Typing Indicator -->
+            <div id="typing-indicator" class="p-3 pt-0 d-none">
+                <div class="chat-bubble-bot d-inline-block">
+                    <div class="typing-indicator">
+                        <span></span>
+                        <span></span>
+                        <span></span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- User Input -->
+            <!-- UPDATED: input area now has light background -->
+            <div id="input-area" class="p-3">
+                <div id="quick-replies" class="d-flex flex-wrap gap-2 mb-2">
+                    <!-- Quick reply buttons appear here -->
+                </div>
+                <div class="d-flex gap-2">
+                    <input type="text" id="user-input" class="form-control flex-grow-1" placeholder="Type your message...">
+                    <button id="send-button" class="btn btn-primary fw-semibold px-4">
+                        Send
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- NEW: History Offcanvas Drawer -->
+    <div class="offcanvas offcanvas-end" tabindex="-1" id="historyOffcanvas" aria-labelledby="historyOffcanvasLabel" data-bs-theme="dark">
+        <div class="offcanvas-header">
+            <h5 class="offcanvas-title" id="historyOffcanvasLabel">My RSVPs</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+        </div>
+        <div class="offcanvas-body">
+            <p class="small text-muted mb-3">This shows all RSVPs you've submitted from this device.</p>
+            <div id="history-list" class="d-grid gap-3">
+                <!-- History items will be injected here by JavaScript -->
+                <p class="text-center" id="history-loading">Loading history...</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- NEW: Professional Delete Confirmation Modal -->
+    <div class="modal fade" id="deleteConfirmModal" tabindex="-1" aria-labelledby="deleteModalLabel" aria-hidden="true" data-bs-theme="dark">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content" style="background-color: #2a2a2a;">
+                <div class="modal-header border-bottom border-secondary">
+                    <h1 class="modal-title fs-5" id="deleteModalLabel">Delete RSVP</h1>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <p>Are you sure you want to delete your RSVP for <strong id="modalEventName">this event</strong>?</p>
+                    <p class="small text-muted">This action cannot be undone.</p>
+                </div>
+                <div class="modal-footer border-top border-secondary">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <!-- This button will trigger the delete -->
+                    <button type="button" class="btn btn-danger" id="confirmDeleteBtn" data-id-to-delete="">Delete</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+    <!-- Bootstrap JS Bundle -->
+    <!-- FIXED: Corrected 'xintegrity' to 'integrity' -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" xintegrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
+
+    <!-- Firebase SDK -->
+    <script type="module">
+        // Import Firebase modules
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/12.4.0/firebase-app.js";
+        import { getAuth, signInAnonymously, onAuthStateChanged, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/12.4.0/firebase-auth.js";
+        // UPDATED: Added imports for history functionality
+        import { 
+            getFirestore, setLogLevel, collection, addDoc, getDocs, onSnapshot, 
+            query, doc, setDoc, serverTimestamp, where, deleteDoc 
+        } from "https://www.gstatic.com/firebasejs/12.4.0/firebase-firestore.js";
+
+        // --- GLOBAL STATE ---
+        let db;
+        let auth;
+        let userId;
+        let conversationState = 'INIT'; // Manages the chatbot's conversational context
+        let rsvpData = {}; // Stores RSVP data as it's collected
+        let availableEvents = []; // Stores events fetched from Firestore
+        // NEW: Modal instance
+        let deleteModal;
+
+        // --- DOM ELEMENTS ---
+        const chatWindow = document.getElementById('chat-window');
+        const userInput = document.getElementById('user-input');
+        const sendButton = document.getElementById('send-button');
+        const quickRepliesContainer = document.getElementById('quick-replies');
+        const typingIndicator = document.getElementById('typing-indicator');
+        // REMOVED: authStatus
+        // NEW: History elements
+        const historyList = document.getElementById('history-list');
+        const historyLoading = document.getElementById('history-loading');
+        // NEW: Modal elements
+        const confirmDeleteBtn = document.getElementById('confirmDeleteBtn');
+        const modalEventName = document.getElementById('modalEventName');
+
+
+        // --- FIREBASE CONFIG & INIT ---
+        const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {
+             apiKey: "AIzaSyD0b5-Sp74S3hSCioKJTJTTMvnLPW9Hu0s",
+            authDomain: "event-rsvp-chatbot.firebaseapp.com",
+            projectId: "event-rsvp-chatbot",
+          
+             storageBucket: "event-rsvp-chatbot.appspot.com",
+            messagingSenderId: "1054015920859",
+            appId: "1:1054015920859:web:8eea4899992095fbf68afe",
+            measurementId: "G-6R3LMRSP6W"
+        };
+        
+        const appId = typeof __app_id !== 'undefined' ? __app_id : firebaseConfig.projectId; 
+        const eventsCollectionPath = `artifacts/${appId}/public/data/events`;
+        const rsvpsCollectionPath = `artifacts/${appId}/public/data/rsvps`;
+
+        try {
+            const app = initializeApp(firebaseConfig);
+            auth = getAuth(app);
+            db = getFirestore(app);
+            // setLogLevel('debug');
+
+            // NEW: Initialize the Bootstrap modal
+            deleteModal = new bootstrap.Modal(document.getElementById('deleteConfirmModal'));
+
+        } catch (e) {
+            console.error("Error initializing Firebase:", e);
+        }
+
+        // --- AUTHENTICATION ---
+        onAuthStateChanged(auth, async (user) => {
+            if (user) {
+                userId = user.uid;
+                // REMOVED: authStatus logic
+                if (conversationState === 'INIT') {
+                    startConversation();
+                }
+                // NEW: Start listening for this user's history
+                listenForMyHistory(); 
+            } else {
+                // authStatus.textContent = 'Authenticating...'; // Removed
+                try {
+                    if (typeof __initial_auth_token !== 'undefined') {
+                        await signInWithCustomToken(auth, __initial_auth_token);
+                    } else {
+                        await signInAnonymously(auth);
+                    }
+                } catch (error) {
+                    console.error("Authentication Error:", error);
+                    // authStatus.textContent = 'Auth Failed'; // Removed
+                    if (error.code === 'auth/configuration-not-found') {
+                        addBotMessage("Authentication failed. If running locally, this usually means 'Anonymous' sign-in isn't enabled in your Firebase project. Please go to your Firebase Console -> Authentication -> Sign-in method and enable 'Anonymous' sign-in.");
+                    } else {
+                        addBotMessage(`I'm sorry, I can't seem to connect right now (Error: ${error.code}). Please check your connection or try again later.`);
+                    }
+                }
+            }
+        });
+
+
+        // --- FIRESTORE FUNCTIONS ---
+        async function fetchEvents() {
+            if (!db) return [];
+            showTyping(true);
+            try {
+                const q = query(collection(db, eventsCollectionPath));
+                const querySnapshot = await getDocs(q);
+                availableEvents = []; 
+                querySnapshot.forEach((doc) => {
+                    availableEvents.push({ id: doc.id, ...doc.data() });
+                });
+                return availableEvents;
+            } catch (error) {
+                console.error("Error fetching events:", error);
+                addBotMessage("I'm having trouble fetching the list of events right now. Please try again in a moment.");
+                return [];
+            } finally {
+                showTyping(false);
+            }
+        }
+        
+        // --- CHAT UI HELPER FUNCTIONS ---
+        function addMessage(content, sender) {
+            const messageElement = document.createElement('div');
+            messageElement.classList.add('chat-bubble-' + sender);
+            messageElement.innerHTML = content; 
+            chatWindow.appendChild(messageElement);
+            chatWindow.scrollTop = chatWindow.scrollHeight;
+        }
+
+        function addBotMessage(message) {
+            addMessage(message, 'bot');
+        }
+
+        function addUserMessage(message) {
+            addMessage(message, 'user');
+        }
+
+
+        // --- CHATBOT LOGIC ---
+
+        function startConversation() {
+            conversationState = 'AWAITING_GREETING_RESPONSE';
+            addBotMessage("Hello! I'm the RSVP bot. Are you here to respond to an event invitation?");
+            showQuickReplies(['Yes, I am!', 'No, just looking.']);
+        }
+
+        async function handleUserInput() {
+            const message = userInput.value.trim();
+            if (!message) return;
+
+            addUserMessage(message);
+            userInput.value = '';
+            clearQuickReplies();
+            showTyping(true);
+
+            await processBotLogic(message);
+        }
+        
+        async function processBotLogic(message) {
+            await new Promise(res => setTimeout(res, 500 + Math.random() * 500));
+            showTyping(false);
+
+            switch (conversationState) {
+                case 'AWAITING_GREETING_RESPONSE':
+                    if (message.toLowerCase().includes('yes')) {
+                        conversationState = 'AWAITING_EVENT_CHOICE';
+                        const events = await fetchEvents();
+                        if (events.length > 0) {
+                            addBotMessage("Great! Which event are you responding to?");
+                            // FIXED: Trim names from DB when mapping
+                            const eventNames = events.map(e => e.name.trim()); 
+                            showQuickReplies(eventNames);
+                        } else {
+                            addBotMessage("It looks like there are no events scheduled right now. Please check back later!");
+                            conversationState = 'INIT';
+                        }
+                    } else {
+                        conversationState = 'INIT';
+                        addBotMessage("No problem! Have a great day.");
+                    }
+                    break;
+
+                case 'AWAITING_EVENT_CHOICE':
+                    // FIXED: Added .trim() to the comparison to handle bad data
+                    const chosenEvent = availableEvents.find(e => e.name.trim() === message);
+                    if (chosenEvent) {
+                        rsvpData = { eventId: chosenEvent.id, eventName: chosenEvent.name.trim() }; // Also trim here
+                        conversationState = 'AWAITING_ATTENDANCE';
+                        addBotMessage(`Got it, "<b>${chosenEvent.name.trim()}</b>". Will you be attending?`);
+                        showQuickReplies(["Yes, I'll be there!", "No, I can't make it"]);
+                    } else {
+                        addBotMessage("I'm sorry, I don't recognize that event. Please select one from the list.");
+                        // FIXED: Trim names from DB when mapping
+                        const eventNames = availableEvents.map(e => e.name.trim());
+                        showQuickReplies(eventNames);
+                    }
+                    break;
+
+                case 'AWAITING_ATTENDANCE':
+                    if (message.toLowerCase().includes('yes')) {
+                        rsvpData.attending = true;
+                        conversationState = 'AWAITING_NAME';
+                        addBotMessage("Wonderful! What is your full name?");
+                    } else {
+                        rsvpData.attending = false;
+                        conversationState = 'AWAITING_NAME';
+                        addBotMessage("Oh, that's a shame. So we can update our records, what is your full name?");
+                    }
+                    break;
+
+                case 'AWAITING_NAME':
+                    if (message.length < 3) {
+                         addBotMessage("Please enter a valid full name.");
+                         return;
+                    }
+                    rsvpData.guestName = message;
+                    if (rsvpData.attending) {
+                        conversationState = 'AWAITING_PREFERENCES';
+                        addBotMessage(`Thanks, <b>${rsvpData.guestName}</b>. Do you have any dietary preferences or special requests? (Type 'none' if not)`);
+                    } else {
+                        await saveRSVP();
+                    }
+                    break;
+
+                case 'AWAITING_PREFERENCES':
+                    rsvpData.preferences = (message.toLowerCase() === 'none') ? '' : message;
+                    await saveRSVP();
+                    break;
+
+                default:
+                    startConversation();
+            }
+        }
+
+        async function saveRSVP() {
+            if (!db) {
+                addBotMessage("I'm having a critical error and can't save your RSVP. Please try again later.");
+                return;
+            }
+            
+            showTyping(true);
+            try {
+                // Save RSVP to the public collection
+                await addDoc(collection(db, rsvpsCollectionPath), {
+                    ...rsvpData,
+                    userId: userId, // CRITICAL: Tag with user's ID
+                    createdAt: serverTimestamp()
+                });
+
+                showTyping(false);
+                let confirmationMessage = `All set! We have you down as <strong>${rsvpData.guestName}</strong> ${rsvpData.attending ? '<strong>attending</strong>' : '<strong>not attending</strong>'} "<b>${rsvpData.eventName}</b>".`;
+                
+                if (rsvpData.attending && rsvpData.preferences) {
+                    confirmationMessage += ` We've noted your request: "<i>${rsvpData.preferences}</i>".`;
+                } else if (rsvpData.attending) {
+                    confirmationMessage += " We've noted you have no special requests.";
+                }
+
+                confirmationMessage += "<br><br>This simulates sending a confirmation email. Thanks for responding!";
+                addBotMessage(confirmationMessage);
+
+            } catch (error) {
+                console.error("Error saving RSVP:", error);
+                showTyping(false);
+                addBotMessage("I'm sorry, there was an error saving your response. Please try one more time.");
+                if (rsvpData.attending) {
+                    conversationState = 'AWAITING_PREFERENCES';
+                    addBotMessage("Could you please provide your preferences again? (Type 'none' if not)");
+                } else {
+                    conversationState = 'AWAITING_NAME';
+                    addBotMessage("Could you please provide your name again?");
+                }
+            }
+
+            rsvpData = {};
+            conversationState = 'INIT';
+            await new Promise(res => setTimeout(res, 2000));
+            showTyping(false);
+            addBotMessage("Can I help you with another RSVP?");
+            conversationState = 'AWAITING_GREETING_RESPONSE';
+            showQuickReplies(['Yes, I am!', 'No, that\'s all.']);
+        }
+
+        function showTyping(show) {
+            if (show) {
+                typingIndicator.classList.remove('d-none');
+            } else {
+                typingIndicator.classList.add('d-none');
+            }
+            chatWindow.scrollTop = chatWindow.scrollHeight;
+        }
+
+        function showQuickReplies(replies) {
+            clearQuickReplies();
+            replies.forEach(reply => {
+                const button = document.createElement('button');
+                button.textContent = reply;
+                button.className = "quick-reply-btn";
+                button.addEventListener('click', () => {
+                    userInput.value = reply;
+                    handleUserInput();
+                });
+                quickRepliesContainer.appendChild(button);
+            });
+        }
+
+        function clearQuickReplies() {
+            quickRepliesContainer.innerHTML = '';
+        }
+
+        // --- NEW: HISTORY FUNCTIONS ---
+
+        function listenForMyHistory() {
+            if (!db || !userId) return;
+
+            // Query for RSVPs that match the current user's ID
+            const q = query(collection(db, rsvpsCollectionPath), where("userId", "==", userId));
+
+            onSnapshot(q, (snapshot) => {
+                if (snapshot.empty) {
+                    historyList.innerHTML = '<p class="text-center" id="history-loading">You have no RSVP history.</p>';
+                    return;
+                }
+                
+                historyList.innerHTML = ''; // Clear list
+                snapshot.forEach((doc) => {
+                    const rsvp = doc.data();
+                    const rsvpEl = document.createElement('div');
+                    rsvpEl.className = 'history-item'; 
+                    
+                    const attendingClass = rsvp.attending ? 'bg-success-subtle text-success-emphasis' : 'bg-danger-subtle text-danger-emphasis';
+                    const attendingText = rsvp.attending ? 'Attending' : 'Not Attending';
+
+                    rsvpEl.innerHTML = `
+                        <div class="history-item-header">
+                            <h5 class="fs-6 fw-bold">${rsvp.eventName}</h5>
+                            <span class="badge ${attendingClass} rounded-pill">${attendingText}</span>
+                        </div>
+                        <p><strong>Name:</strong> ${rsvp.guestName}</p>
+                        ${rsvp.preferences ? `<p><strong>Note:</strong> <i>${rsvp.preferences}</i></p>` : ''}
+                        <!-- UPDATED: Changed class and added event name data -->
+                        <button class="btn btn-outline-danger btn-sm request-delete-btn" 
+                                data-doc-id="${doc.id}" 
+                                data-event-name="${rsvp.eventName}">
+                            Delete
+                        </button>
+                    `;
+                    historyList.prepend(rsvpEl); // Add new RSVPs to the top
+                });
+            }, (error) => {
+                console.error("Error listening for history:", error);
+                historyList.innerHTML = '<p class="text-danger fst-italic small">Error loading history.</p>';
+            });
+        }
+
+        // NEW: Function to open the confirmation modal
+        function requestDeleteRSVP(docId, eventName) {
+            // Set the data on the modal elements
+            modalEventName.textContent = `"${eventName}"`;
+            confirmDeleteBtn.dataset.idToDelete = docId;
+            // Show the modal
+            deleteModal.show();
+        }
+
+        // UPDATED: This function now just performs the delete
+        async function deleteRSVP(docId) {
+            if (!db) return;
+            try {
+                const docRef = doc(db, rsvpsCollectionPath, docId);
+                await deleteDoc(docRef);
+                // The onSnapshot listener will automatically update the UI
+            } catch (error) {
+                console.error("Error deleting document:", error);
+                // You could show a proper toast/modal error here
+                alert("Error deleting RSVP. Please try again."); 
+            } finally {
+                // Hide the modal after action
+                deleteModal.hide();
+            }
+        }
+
+        // --- EVENT LISTENERS ---
+        sendButton.addEventListener('click', handleUserInput);
+        
+        userInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
+                handleUserInput();
+            }
+        });
+
+        // UPDATED: Global listener for delete buttons (Event Delegation)
+        document.addEventListener('click', (e) => {
+            // UPDATED: Listen for the new button class
+            if (e.target && e.target.classList.contains('request-delete-btn')) {
+                const docId = e.target.dataset.docId;
+                const eventName = e.target.dataset.eventName;
+                if (docId) {
+                    // UPDATED: Call the request function instead of confirm()
+                    requestDeleteRSVP(docId, eventName);
+                }
+            }
+        });
+
+        // NEW: Listener for the modal's "confirm" button
+        confirmDeleteBtn.addEventListener('click', () => {
+            const docId = confirmDeleteBtn.dataset.idToDelete;
+            if (docId) {
+                deleteRSVP(docId);
+            }
+        });
+
+    </script>
+</body>
+</html>
+
+
